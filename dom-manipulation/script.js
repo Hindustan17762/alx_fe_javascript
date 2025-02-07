@@ -5,7 +5,7 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "Life is what happens when you're busy making other plans.", category: "Life" }
 ];
 
-// Mock API URL (replace with real server if available)
+// Mock API URL (replace with a real server if available)
 const API_URL = "https://jsonplaceholder.typicode.com/posts"; 
 
 // Function to populate categories dynamically
@@ -124,7 +124,7 @@ async function syncQuotes() {
           });
       }
 
-      showSyncNotification("Quotes successfully synced with the server.");
+      showSyncNotification("Quotes synced with server!"); // Required message
 
   } catch (error) {
       console.error("Sync error:", error);
