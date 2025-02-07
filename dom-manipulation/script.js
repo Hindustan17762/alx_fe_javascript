@@ -5,8 +5,8 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "Life is what happens when you're busy making other plans.", category: "Life" }
 ];
 
-// API URL for fetching mock quotes
-const API_URL = "https://jsonplaceholder.typicode.com/posts?_limit=5";
+// Mock API URLs
+const API_URL = "https://jsonplaceholder.typicode.com/posts"; // Replace with real server if available
 
 // Function to populate categories dynamically
 function populateCategories() {
@@ -55,7 +55,7 @@ function displayQuote(filteredQuotes = quotes) {
 }
 
 // Function to add a new quote
-function addQuote() {
+async function addQuote() {
   const newQuoteText = document.getElementById("newQuoteText").value.trim();
   const newQuoteCategory = document.getElementById("newQuoteCategory").value.trim();
 
@@ -65,17 +65,39 @@ function addQuote() {
   }
 
   const newQuote = { text: newQuoteText, category: newQuoteCategory };
+
+  // Save locally first
   quotes.push(newQuote);
   localStorage.setItem("quotes", JSON.stringify(quotes)); // Save to local storage
 
   populateCategories(); // Update dropdown if a new category is added
   filterQuotes(); // Refresh quote display
 
+  // Try to send the new quote to the server
+  try {
+      const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json"
+          },
+          body: JSON.stringify(newQuote)
+      });
+
+      if (response.ok) {
+          const responseData = await response.json();
+          console.log("Server response:", responseData);
+          alert("Quote added successfully and synced with the server!");
+      } else {
+          throw new Error("Failed to sync with the server.");
+      }
+  } catch (error) {
+      console.error("Sync error:", error);
+      alert("Quote added locally but could not be synced with the server.");
+  }
+
   // Clear input fields
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
-
-  alert("Quote added successfully!");
 }
 
 // Function to fetch quotes from "server"
