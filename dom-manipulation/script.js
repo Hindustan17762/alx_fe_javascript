@@ -81,10 +81,9 @@ async function addQuote() {
   document.getElementById("newQuoteCategory").value = "";
 }
 
-// Function to sync quotes with the server (fetch + post)
-async function syncQuotes() {
+// Function to fetch quotes from the server
+async function fetchQuotesFromServer() {
   try {
-      // Fetch latest quotes from the server
       const response = await fetch(API_URL);
       const serverQuotes = await response.json();
 
@@ -101,10 +100,20 @@ async function syncQuotes() {
           localStorage.setItem("quotes", JSON.stringify(quotes));
           populateCategories();
           filterQuotes();
-          showSyncNotification(`Synced ${newQuotes.length} new quotes from the server.`);
+          showSyncNotification(`Fetched ${newQuotes.length} new quotes from the server.`);
       }
 
-      // Send local quotes to server
+  } catch (error) {
+      console.error("Error fetching quotes:", error);
+      alert("Failed to fetch quotes from the server.");
+  }
+}
+
+// Function to sync quotes with the server (fetch + post)
+async function syncQuotes() {
+  await fetchQuotesFromServer(); // Fetch latest quotes before syncing
+
+  try {
       for (const quote of quotes) {
           await fetch(API_URL, {
               method: "POST",
@@ -114,6 +123,8 @@ async function syncQuotes() {
               body: JSON.stringify(quote)
           });
       }
+
+      showSyncNotification("Quotes successfully synced with the server.");
 
   } catch (error) {
       console.error("Sync error:", error);
