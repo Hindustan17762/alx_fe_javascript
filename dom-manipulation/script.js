@@ -6,7 +6,7 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
 ];
 
 // Mock API URLs
-const API_URL = "https://jsonplaceholder.typicode.com/posts"; // Replace with real server if available
+const API_URL = "https://jsonplaceholder.typicode.com/posts"; // Replace with actual API if available
 
 // Function to populate categories dynamically
 function populateCategories() {
@@ -73,36 +73,18 @@ async function addQuote() {
   populateCategories(); // Update dropdown if a new category is added
   filterQuotes(); // Refresh quote display
 
-  // Try to send the new quote to the server
-  try {
-      const response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json"
-          },
-          body: JSON.stringify(newQuote)
-      });
-
-      if (response.ok) {
-          const responseData = await response.json();
-          console.log("Server response:", responseData);
-          alert("Quote added successfully and synced with the server!");
-      } else {
-          throw new Error("Failed to sync with the server.");
-      }
-  } catch (error) {
-      console.error("Sync error:", error);
-      alert("Quote added locally but could not be synced with the server.");
-  }
+  // Sync with the server
+  syncQuotes();
 
   // Clear input fields
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
 }
 
-// Function to fetch quotes from "server"
-async function fetchQuotesFromServer() {
+// Function to sync quotes with the server
+async function syncQuotes() {
   try {
+      // Fetch latest quotes from the server
       const response = await fetch(API_URL);
       const serverQuotes = await response.json();
 
@@ -121,8 +103,21 @@ async function fetchQuotesFromServer() {
           filterQuotes();
           showSyncNotification(`Synced ${newQuotes.length} new quotes from the server.`);
       }
+
+      // Send local quotes to server
+      for (const quote of quotes) {
+          await fetch(API_URL, {
+              method: "POST",
+              headers: {
+                  "Content-Type": "application/json"
+              },
+              body: JSON.stringify(quote)
+          });
+      }
+
   } catch (error) {
-      console.error("Error fetching quotes:", error);
+      console.error("Sync error:", error);
+      alert("Failed to sync with the server. Quotes are saved locally.");
   }
 }
 
@@ -142,17 +137,12 @@ function showSyncNotification(message) {
   setTimeout(() => document.body.removeChild(notification), 3000);
 }
 
-// Function to manually trigger sync
-function manualSync() {
-  fetchQuotesFromServer();
-}
-
 // Auto-fetch new quotes every 30 seconds
-setInterval(fetchQuotesFromServer, 30000);
+setInterval(syncQuotes, 30000);
 
 // Initialize functions on page load
 document.addEventListener("DOMContentLoaded", () => {
   populateCategories();
   filterQuotes();
-  fetchQuotesFromServer();
+  syncQuotes();
 });
