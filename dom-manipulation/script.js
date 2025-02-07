@@ -5,15 +5,16 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "Life is what happens when you're busy making other plans.", category: "Life" }
 ];
 
-// Function to populate categories in the dropdown
+// API URL for fetching mock quotes
+const API_URL = "https://jsonplaceholder.typicode.com/posts?_limit=5";
+
+// Function to populate categories dynamically
 function populateCategories() {
   const categoryFilter = document.getElementById("categoryFilter");
-  const categories = [...new Set(quotes.map(q => q.category))]; // Get unique categories
+  const categories = [...new Set(quotes.map(q => q.category))]; // Unique categories
 
-  // Clear existing options except "All Categories"
-  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`; // Reset dropdown
 
-  // Add categories dynamically
   categories.forEach(category => {
       let option = document.createElement("option");
       option.value = category;
@@ -40,7 +41,7 @@ function filterQuotes() {
   displayQuote(filteredQuotes);
 }
 
-// Function to display a random quote from the filtered list
+// Function to display a random quote
 function displayQuote(filteredQuotes = quotes) {
   const quoteDisplay = document.getElementById("quoteDisplay");
 
@@ -68,7 +69,7 @@ function addQuote() {
   localStorage.setItem("quotes", JSON.stringify(quotes)); // Save to local storage
 
   populateCategories(); // Update dropdown if a new category is added
-  filterQuotes(); // Refresh quote display based on the selected filter
+  filterQuotes(); // Refresh quote display
 
   // Clear input fields
   document.getElementById("newQuoteText").value = "";
@@ -77,8 +78,59 @@ function addQuote() {
   alert("Quote added successfully!");
 }
 
+// Function to fetch quotes from "server"
+async function fetchQuotesFromServer() {
+  try {
+      const response = await fetch(API_URL);
+      const serverQuotes = await response.json();
+
+      let newQuotes = serverQuotes.map(q => ({
+          text: q.title, // Using `title` as mock quote text
+          category: "Server" // Assigning "Server" as category
+      }));
+
+      // Remove duplicates (if a quote text already exists, don’t add it)
+      newQuotes = newQuotes.filter(newQ => !quotes.some(q => q.text === newQ.text));
+
+      if (newQuotes.length > 0) {
+          quotes.push(...newQuotes);
+          localStorage.setItem("quotes", JSON.stringify(quotes));
+          populateCategories();
+          filterQuotes();
+          showSyncNotification(`Synced ${newQuotes.length} new quotes from the server.`);
+      }
+  } catch (error) {
+      console.error("Error fetching quotes:", error);
+  }
+}
+
+// Function to show sync notification
+function showSyncNotification(message) {
+  const notification = document.createElement("div");
+  notification.textContent = message;
+  notification.style.position = "fixed";
+  notification.style.bottom = "10px";
+  notification.style.right = "10px";
+  notification.style.padding = "10px";
+  notification.style.background = "#28a745";
+  notification.style.color = "#fff";
+  notification.style.borderRadius = "5px";
+
+  document.body.appendChild(notification);
+  setTimeout(() => document.body.removeChild(notification), 3000);
+}
+
+// Function to manually trigger sync
+function manualSync() {
+  fetchQuotesFromServer();
+}
+
+// Auto-fetch new quotes every 30 seconds
+setInterval(fetchQuotesFromServer, 30000);
+
 // Initialize functions on page load
 document.addEventListener("DOMContentLoaded", () => {
   populateCategories();
   filterQuotes();
+  fetchQuotesFromServer();
 });
